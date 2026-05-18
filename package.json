@@ -9,6 +9,7 @@
     "verify": "bun scripts/verify.ts",
     "ingest": "bun scripts/ingest.ts",
     "generate": "bun scripts/generate.ts",
+    "wiki": "bun scripts/wiki.ts",
     "dev": "react-router dev",
     "build": "bun run generate && react-router build",
     "start": "cd build/client && python3 -m http.server --bind localhost",

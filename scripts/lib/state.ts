@@ -22,8 +22,56 @@ export function db(): Database {
       status        TEXT NOT NULL,
       updated_at    TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS memories (
+      memory_path   TEXT PRIMARY KEY,
+      content_hash  TEXT NOT NULL,
+      source_id     TEXT NOT NULL,
+      project       TEXT NOT NULL,
+      status        TEXT NOT NULL,
+      updated_at    TEXT NOT NULL
+    );
   `)
   return _db
+}
+
+// ----- memories ledger -------------------------------------------------------
+
+export type MemoryRow = {
+  memory_path: string
+  content_hash: string
+  source_id: string
+  project: string
+  status: string
+  updated_at: string
+}
+
+export function getMemory(memory_path: string): MemoryRow | null {
+  return (db().query('SELECT * FROM memories WHERE memory_path = ?').get(memory_path) as MemoryRow | null) ?? null
+}
+
+export function upsertMemory(row: MemoryRow): void {
+  db()
+    .query(
+      `INSERT INTO memories (memory_path, content_hash, source_id, project, status, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?)
+       ON CONFLICT(memory_path) DO UPDATE SET
+         content_hash = excluded.content_hash,
+         source_id    = excluded.source_id,
+         project      = excluded.project,
+         status       = excluded.status,
+         updated_at   = excluded.updated_at`
+    )
+    .run(row.memory_path, row.content_hash, row.source_id, row.project, row.status, row.updated_at)
+}
+
+export function updateMemoryStatus(memory_path: string, status: string): void {
+  db()
+    .query('UPDATE memories SET status = ?, updated_at = ? WHERE memory_path = ?')
+    .run(status, new Date().toISOString(), memory_path)
+}
+
+export function listMemories(): MemoryRow[] {
+  return db().query('SELECT * FROM memories ORDER BY memory_path').all() as MemoryRow[]
 }
 
 export type SourceRow = {
