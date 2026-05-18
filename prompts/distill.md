@@ -31,7 +31,7 @@ data/collected/<session-id>/
     └── ...
 ```
 
-A sub-agent reads `transcript.md` end-to-end to understand the arc, then surgically Reads only the `tools/*.md` files that hold code, file content, or command output it wants to quote. This keeps the initial read tractable while preserving all the raw material.
+A sub-agent skims `transcript.md` to judge whether the session contains a generally applicable lesson, then — only if it does — Reads further (including the `tools/*.md` files holding code or output worth quoting). If the session is a one-off edit, project-specific bug fix, or routine feature work with no transferable concept, the sub-agent SKIPs early without reading the whole transcript.
 
 ## Your task
 
@@ -56,17 +56,17 @@ You are a distillation worker for clawd-wiki. Your job is to turn ONE pre-scrubb
 
 Step 1: Read prompts/distill-rules.md in full. That file is authoritative for audience, redaction, content depth, code-snippet expectations, output format, and pre-flight checklist.
 
-Step 2: Read <SESSION_DIR>/transcript.md end-to-end. This is the conversational skeleton — every assistant turn, every user message, plus one pointer line per tool call.
+Step 2: Triage <SESSION_DIR>/transcript.md. You do NOT need to read it end-to-end. Skim opening turns, scan for the shape of the work, and decide whether this session likely contains a generally applicable lesson — a key architectural discussion, a non-trivial implementation pattern, or a stuck-then-resolved arc whose concept transfers across codebases. If it's a one-off edit, project-specific bug fix, routine feature work, configuration tweak, or otherwise has no transferable concept, write the SKIP sentinel to <OUTPUT_PATH> and stop. Default is skip; only proceed when you can already see a real pitfall AND a generic concept that resolved it.
 
-Step 3: Identify which tool calls are worth quoting verbatim. Good candidates:
+Step 3: If proceeding, read the relevant parts of the transcript more carefully and identify which tool calls are worth quoting verbatim. Good candidates:
   - The Edit/Write that introduced the key pattern (cite the resulting code in a Technique).
   - The Bash command that demonstrated the failing case (cite as a Pitfall reproduction).
   - The Read that revealed the constraint (cite the relevant snippet).
-Reference each tool file by path: <SESSION_DIR>/tools/<seq>-<Name>.md. Read only the ones you need — there may be many.
+Reference each tool file by path: <SESSION_DIR>/tools/<seq>-<Name>.md. Read only the ones you need — there may be many. You may also stop and SKIP at this stage if closer reading reveals no transferable concept after all.
 
-Step 4: Produce a distilled note following prompts/distill-rules.md. The note SHOULD include real code snippets where the session contained them. You MAY supplement with general knowledge from your own training to fill small gaps (e.g. naming a well-known pattern, explaining a standard library behavior the session used implicitly) — keep supplements minor and clearly subordinate to what the session actually did.
+Step 4: Produce a distilled note following prompts/distill-rules.md. Every Concept you emit MUST be genuinely generic — reusable across codebases, statable without naming this project. If a candidate concept only makes sense inside this project's architecture, drop it (or demote to a `[[work:*]]`). A note with zero genuinely generic concepts should be a SKIP. The note SHOULD include real code snippets where the session contained them. You MAY supplement with general knowledge from your own training to fill small gaps (e.g. naming a well-known pattern, explaining a standard library behavior the session used implicitly) — keep supplements minor and clearly subordinate to what the session actually did.
 
-Step 5: Write the note to <OUTPUT_PATH> using the Write tool.
+Step 5: Write the note (or the SKIP sentinel) to <OUTPUT_PATH> using the Write tool.
 
 Step 6: Report back exactly one line: `ok` (file written), `skip` (you wrote the SKIP sentinel), or `error: <one-sentence reason>`. Nothing else.
 

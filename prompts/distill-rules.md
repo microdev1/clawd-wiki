@@ -10,8 +10,6 @@ Every session that's worth distilling tells one story:
 2. **What pitfalls were hit?** Specific failing patterns — wrong code, wrong assumption, wrong tool use — that blocked or detoured the work.
 3. **What concepts resolved them?** Generic, reusable engineering patterns that future agents can recognize and apply.
 
-If you cannot identify at least one real pitfall AND at least one concept that resolved it, **SKIP**. See "When to skip" below — the default is skip, not distill. Sessions without this chain are bloat.
-
 ## Slug conventions
 
 - `[[project:<kebab>]]` — codebase / repo name. Free-form.
@@ -20,18 +18,6 @@ If you cannot identify at least one real pitfall AND at least one concept that r
 - `[[concept:<kebab>]]` — a GENERIC engineering pattern reusable across codebases. Never project-bound.
 
 A pitfall's "Resolved by" cites a `[[concept:*]]`. A concept's "Related:" cites other concepts or pitfalls. Never self-cite.
-
-## Input: directory, not file
-
-```
-data/collected/<session-id>/
-├── transcript.md     conversation skeleton with tool-call pointers
-└── tools/            one file per tool call, FULL untruncated content
-    ├── 001-Read.md
-    └── ...
-```
-
-Read `transcript.md` end-to-end first. Then surgically open ONLY the `tools/*.md` files whose code, content, or output you'll quote — the Edit that introduced the pattern, the Bash whose stderr shows the failure, the Edit that fixed it. Don't read all of them.
 
 ## Redaction
 
@@ -69,20 +55,11 @@ Don't emit these. They're calibration only.
 
 ## Supplementing with general knowledge
 
-You MAY add one sentence of background when the session uses a pattern but doesn't explain a prerequisite the reader needs (e.g. "Proxy traps execute on every property access"). Constraints: session facts are primary; never invent project-specific facts; when unsure if a fact came from the session or from training, drop it.
+If you do supplement, one sentence of background is fine (e.g. naming a well-known pattern, explaining a standard library behavior). Never invent project-specific facts; when unsure if a fact came from the session or from training, drop it.
 
-## When to skip — default is skip
+## SKIP sentinel
 
-Emit the SKIP marker and stop when ANY is true:
-
-- No pitfall is visible, OR no concept resolves one. (A session that's pure feature work without a stuck-then-resolved arc has no transferable lesson.)
-- The lesson is one-off syntax, tooling configuration, or a project-specific bug fix with no general principle.
-- The "concept" you'd write is just the project's own architecture restated.
-- You'd have to invent or stretch to fill the bullets.
-
-Distill ONLY when you can write at least one Pitfall with a real failing pattern AND at least one generic Concept that resolved it. When in doubt, skip.
-
-SKIP marker (entire file content):
+When the orchestrator's triage rules tell you to skip, write this exact content as the entire file:
 
 ```
 <!-- SKIP: no transferable knowledge -->
@@ -142,7 +119,3 @@ You MUST keep these correct (not auto-fixable):
 2. **Cross-references point at the OTHER section's type.** Pitfall's "Resolved by" → concept. Concept's "Related:" → other concepts (or pitfalls). Never self.
 3. **Every body-cited `[[concept:*]]` / `[[work:*]]` / `[[pitfall:*]]` has its own defining bullet in its section.** Otherwise it renders as an orphan with no page behind it.
 4. **Code snippets come from `tools/*.md` files you actually read.** No fabrication. Prose-only is fine if nothing was worth quoting.
-
-## When done
-
-Write the file with Write. Reply with exactly one line: `ok` or `skip`. Nothing else.
