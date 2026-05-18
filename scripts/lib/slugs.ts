@@ -4,6 +4,7 @@
 
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
+import { parse as yamlParse } from 'yaml'
 
 export type SlugType = 'work' | 'pitfall' | 'concept'
 export const SLUG_TYPES: readonly SlugType[] = ['work', 'pitfall', 'concept'] as const
@@ -61,26 +62,28 @@ export function humanizeSlug(slug: string): string {
     .join(' ')
 }
 
-function parseFrontmatter(md: string): { fm: Record<string, string>; body: string } {
+function parseFrontmatter(md: string): { fm: Record<string, unknown>; body: string } {
   const m = md.match(/^---\n([\s\S]*?)\n---\n?/)
   if (!m) return { fm: {}, body: md }
-  const fm: Record<string, string> = {}
-  for (const line of m[1]!.split('\n')) {
-    const lm = line.match(/^([a-z_]+)\s*:\s*(.*)$/)
-    if (!lm) continue
-    fm[lm[1]!] = lm[2]!.trim()
+  let parsed: unknown
+  try {
+    parsed = yamlParse(m[1]!)
+  } catch {
+    return { fm: {}, body: md.slice(m[0].length) }
   }
+  const fm = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {}
   return { fm, body: md.slice(m[0].length) }
 }
 
-function parseList(value: string | undefined): string[] {
-  if (!value) return []
-  const m = value.match(/^\[(.*)\]$/)
-  if (!m) return []
-  return m[1]!
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean)
+function stringField(fm: Record<string, unknown>, key: string): string | undefined {
+  const v = fm[key]
+  return typeof v === 'string' ? v : undefined
+}
+
+function listField(fm: Record<string, unknown>, key: string): string[] {
+  const v = fm[key]
+  if (!Array.isArray(v)) return []
+  return v.filter((x): x is string => typeof x === 'string').map((s) => s.trim()).filter(Boolean)
 }
 
 function extractSection(body: string, heading: string): string {
@@ -165,9 +168,10 @@ export function buildIndex(verifiedDir: string): WikiIndex {
   for (const file of files) {
     const src = readFileSync(join(verifiedDir, file), 'utf8')
     const { fm, body } = parseFrontmatter(src)
-    const session_id = fm.source_session ?? file.replace(/\.md$/, '')
-    const project = fm.project && fm.project !== 'null' ? fm.project : null
-    const projectsReferenced = parseList(fm.projects_referenced)
+    const session_id = stringField(fm, 'source_session') ?? file.replace(/\.md$/, '')
+    const rawProject = stringField(fm, 'project')
+    const project = rawProject && rawProject !== 'null' ? rawProject : null
+    const projectsReferenced = listField(fm, 'projects_referenced')
     const allProjects = new Set<string>()
     if (project) allProjects.add(project)
     for (const p of projectsReferenced) allProjects.add(p)
@@ -226,9 +230,9 @@ export function buildIndex(verifiedDir: string): WikiIndex {
       const add = (target: string[], items: string[]) => {
         for (const s of items) if (!target.includes(s)) target.push(s)
       }
-      add(p.work, parseList(fm.work_units))
-      add(p.pitfalls, parseList(fm.pitfalls))
-      add(p.concepts, parseList(fm.concepts))
+      add(p.work, listField(fm, 'work_units'))
+      add(p.pitfalls, listField(fm, 'pitfalls'))
+      add(p.concepts, listField(fm, 'concepts'))
       if (!p.sources.includes(session_id)) p.sources.push(session_id)
     }
   }

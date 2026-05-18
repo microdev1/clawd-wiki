@@ -278,6 +278,61 @@ function countByType(index: WikiIndex, type: SlugType): number {
   return n
 }
 
+type GraphNode = { id: string; type: SlugType | 'project'; slug: string; title: string }
+type GraphEdge = { from: string; to: string; kind: 'related' | 'project' }
+type Graph = { nodes: GraphNode[]; edges: GraphEdge[] }
+
+function nodeId(type: SlugType | 'project', slug: string): string {
+  return `${type}:${slug}`
+}
+
+function buildGraph(index: WikiIndex): Graph {
+  const nodes: GraphNode[] = []
+  const edges: GraphEdge[] = []
+  const seenEdges = new Set<string>()
+
+  const pushEdge = (from: string, to: string, kind: GraphEdge['kind']) => {
+    const key = `${kind}\x00${from}\x00${to}`
+    if (seenEdges.has(key)) return
+    seenEdges.add(key)
+    edges.push({ from, to, kind })
+  }
+
+  for (const e of index.slugs.values()) {
+    nodes.push({ id: nodeId(e.type, e.slug), type: e.type, slug: e.slug, title: e.title })
+  }
+  for (const p of index.projects.values()) {
+    nodes.push({ id: nodeId('project', p.slug), type: 'project', slug: p.slug, title: p.title })
+  }
+
+  // Ref edges from each slug's outbound `related`. Skip refs whose target isn't defined.
+  for (const e of index.slugs.values()) {
+    const from = nodeId(e.type, e.slug)
+    for (const ref of e.related) {
+      const exists =
+        ref.type === 'project' ? index.projects.has(ref.slug) : index.slugs.has(`${ref.type}:${ref.slug}`)
+      if (!exists) continue
+      pushEdge(from, nodeId(ref.type, ref.slug), ref.type === 'project' ? 'project' : 'related')
+    }
+  }
+
+  // Project membership: project -> slug for everything the project rolls up.
+  for (const p of index.projects.values()) {
+    const projId = nodeId('project', p.slug)
+    const addList = (type: SlugType, slugs: string[]) => {
+      for (const slug of slugs) {
+        if (!index.slugs.has(`${type}:${slug}`)) continue
+        pushEdge(projId, nodeId(type, slug), 'project')
+      }
+    }
+    addList('work', p.work)
+    addList('pitfall', p.pitfalls)
+    addList('concept', p.concepts)
+  }
+
+  return { nodes, edges }
+}
+
 function wipeDir(dir: string): void {
   if (!existsSync(dir)) return
   for (const f of readdirSync(dir, { withFileTypes: true })) {
@@ -305,6 +360,8 @@ for (const project of index.projects.values()) {
   const out = join(OUT_DIR, 'projects', `${project.slug}.mdx`)
   writeFileSync(out, renderProjectPage(project, index))
 }
+
+writeFileSync(join(OUT_DIR, 'graph.json'), JSON.stringify(buildGraph(index), null, 2))
 
 const stats = {
   projects: index.projects.size,

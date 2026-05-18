@@ -27,15 +27,19 @@ const FRONTMATTER_KEY: Record<SlugType, string> = {
   concept: 'concepts'
 }
 
+import { parse as yamlParse } from 'yaml'
+
 function extractFrontmatterList(frontmatter: string, key: string): string[] {
-  // Match `key: [a, b, c]` or `key: []`. List may span lines but our prompt
-  // always emits single-line lists, so a one-line regex is sufficient.
-  const m = frontmatter.match(new RegExp(`^${key}\\s*:\\s*\\[(.*?)\\]\\s*$`, 'm'))
-  if (!m) return []
-  return m[1]!
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean)
+  let doc: unknown
+  try {
+    doc = yamlParse(frontmatter)
+  } catch {
+    return []
+  }
+  if (!doc || typeof doc !== 'object') return []
+  const v = (doc as Record<string, unknown>)[key]
+  if (!Array.isArray(v)) return []
+  return v.filter((x): x is string => typeof x === 'string').map((s) => s.trim()).filter(Boolean)
 }
 
 export function lintSlugs(input: string): SlugReport {

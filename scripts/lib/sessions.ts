@@ -1,3 +1,14 @@
+// Session reader + splitter. Emits a two-layer representation:
+//   - A "skeleton" transcript that captures conversational flow plus one
+//     pointer line per tool call (`@tools/<seq>-<Name>.md`).
+//   - One file per tool call (`tools/<seq>-<Name>.md`) holding the FULL
+//     untruncated input + result.
+//
+// Distillation sub-agents read the skeleton end-to-end and then surgically
+// Read only the tool files they need (a key edit, a tricky read, the failing
+// command) so code can be quoted verbatim without ballooning the agent's
+// initial context.
+
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
@@ -7,13 +18,26 @@ const PROJECTS_ROOT = join(homedir(), '.claude', 'projects')
 export type Turn =
   | { role: 'user'; text: string; timestamp: string }
   | { role: 'assistant'; text: string; timestamp: string; model?: string }
-  | { role: 'tool_use'; name: string; input: unknown; timestamp: string }
-  | { role: 'tool_result'; preview: string; isError: boolean; timestamp: string }
+  | {
+      role: 'tool_use'
+      seq: number
+      name: string
+      input: unknown
+      toolUseId: string
+      timestamp: string
+    }
+  | {
+      role: 'tool_result'
+      toolUseId: string
+      content: string
+      isError: boolean
+      timestamp: string
+    }
 
 export type Session = {
   sessionId: string
   title: string | null
-  projectDir: string // e.g. -Users-macroni-Developer-projects-boilerplate-ssg
+  projectDir: string
   cwd: string | null
   branch: string | null
   startedAt: string | null
@@ -37,18 +61,30 @@ type Line = {
   sessionId?: string
 }
 
-const TOOL_RESULT_PREVIEW_CHARS = 400
-
 type MessageContent = string | Array<Record<string, unknown>> | undefined
 
-function extractContent(content: MessageContent): {
+function blockText(block: Record<string, unknown>): string {
+  const c = block['content']
+  if (typeof c === 'string') return c
+  if (Array.isArray(c)) {
+    return c
+      .map((b) => (typeof b === 'object' && b && 'text' in b ? String((b as { text: unknown }).text ?? '') : ''))
+      .join('\n')
+  }
+  return ''
+}
+
+function extractContent(
+  content: MessageContent,
+  seqRef: { value: number }
+): {
   text: string[]
-  toolUses: Array<{ name: string; input: unknown }>
-  toolResults: Array<{ preview: string; isError: boolean }>
+  toolUses: Array<{ seq: number; name: string; input: unknown; toolUseId: string }>
+  toolResults: Array<{ toolUseId: string; content: string; isError: boolean }>
 } {
   const text: string[] = []
-  const toolUses: Array<{ name: string; input: unknown }> = []
-  const toolResults: Array<{ preview: string; isError: boolean }> = []
+  const toolUses: Array<{ seq: number; name: string; input: unknown; toolUseId: string }> = []
+  const toolResults: Array<{ toolUseId: string; content: string; isError: boolean }> = []
 
   if (typeof content === 'string') {
     if (content.trim()) text.push(content)
@@ -57,22 +93,23 @@ function extractContent(content: MessageContent): {
   if (!Array.isArray(content)) return { text, toolUses, toolResults }
 
   for (const block of content) {
-    const t = block.type as string | undefined
-    if (t === 'text' && typeof block.text === 'string') {
-      text.push(block.text)
+    const t = block['type'] as string | undefined
+    if (t === 'text' && typeof block['text'] === 'string') {
+      text.push(block['text'] as string)
     } else if (t === 'tool_use') {
-      toolUses.push({ name: String(block.name ?? '?'), input: block.input })
+      const seq = ++seqRef.value
+      toolUses.push({
+        seq,
+        name: String(block['name'] ?? '?'),
+        input: block['input'],
+        toolUseId: String(block['id'] ?? `unknown-${seq}`)
+      })
     } else if (t === 'tool_result') {
-      const c = block.content
-      let preview = ''
-      if (typeof c === 'string') preview = c
-      else if (Array.isArray(c)) {
-        preview = c
-          .map((b) => (typeof b === 'object' && b && 'text' in b ? String((b as { text: unknown }).text ?? '') : ''))
-          .join('\n')
-      }
-      preview = preview.slice(0, TOOL_RESULT_PREVIEW_CHARS)
-      toolResults.push({ preview, isError: Boolean(block.is_error) })
+      toolResults.push({
+        toolUseId: String(block['tool_use_id'] ?? ''),
+        content: blockText(block),
+        isError: Boolean(block['is_error'])
+      })
     }
     // intentionally skip "thinking" blocks
   }
@@ -91,6 +128,7 @@ export function readSession(jsonlPath: string, projectDir: string): Session {
   let endedAt: string | null = null
   let model: string | null = null
   const turns: Turn[] = []
+  const seqRef = { value: 0 }
 
   for (const line of lines) {
     let evt: Line
@@ -112,20 +150,38 @@ export function readSession(jsonlPath: string, projectDir: string): Session {
     if (evt.message?.model && !model) model = evt.message.model
 
     if (evt.type === 'user' && evt.message?.role === 'user') {
-      const { text, toolResults } = extractContent(evt.message.content)
+      const { text, toolResults } = extractContent(evt.message.content, seqRef)
       for (const t of text) {
         turns.push({ role: 'user', text: t, timestamp: evt.timestamp ?? '' })
       }
       for (const r of toolResults) {
-        turns.push({ role: 'tool_result', preview: r.preview, isError: r.isError, timestamp: evt.timestamp ?? '' })
+        turns.push({
+          role: 'tool_result',
+          toolUseId: r.toolUseId,
+          content: r.content,
+          isError: r.isError,
+          timestamp: evt.timestamp ?? ''
+        })
       }
     } else if (evt.type === 'assistant' && evt.message?.role === 'assistant') {
-      const { text, toolUses } = extractContent(evt.message.content)
+      const { text, toolUses } = extractContent(evt.message.content, seqRef)
       for (const t of text) {
-        turns.push({ role: 'assistant', text: t, timestamp: evt.timestamp ?? '', model: evt.message.model })
+        turns.push({
+          role: 'assistant',
+          text: t,
+          timestamp: evt.timestamp ?? '',
+          ...(evt.message.model ? { model: evt.message.model } : {})
+        })
       }
       for (const u of toolUses) {
-        turns.push({ role: 'tool_use', name: u.name, input: u.input, timestamp: evt.timestamp ?? '' })
+        turns.push({
+          role: 'tool_use',
+          seq: u.seq,
+          name: u.name,
+          input: u.input,
+          toolUseId: u.toolUseId,
+          timestamp: evt.timestamp ?? ''
+        })
       }
     }
   }
@@ -144,8 +200,31 @@ export function readSession(jsonlPath: string, projectDir: string): Session {
   }
 }
 
-export function renderTranscript(s: Session): string {
+function toolFilename(seq: number, name: string): string {
+  return `${String(seq).padStart(3, '0')}-${name}.md`
+}
+
+function firstLine(s: string, max = 120): string {
+  const line = s.split('\n').find((l) => l.trim()) ?? ''
+  return line.length > max ? line.slice(0, max - 1) + '…' : line
+}
+
+export type ToolFile = { seq: number; name: string; filename: string; content: string }
+
+// Split a Session into a skeleton transcript and one file per tool call.
+// Tool calls in the skeleton appear as a single pointer line per tool_use
+// (the result is appended into the same file).
+export function splitSession(s: Session): { skeleton: string; toolFiles: ToolFile[] } {
+  const resultsByUseId = new Map<string, { content: string; isError: boolean }>()
+  for (const t of s.turns) {
+    if (t.role === 'tool_result' && t.toolUseId) {
+      resultsByUseId.set(t.toolUseId, { content: t.content, isError: t.isError })
+    }
+  }
+
+  const toolFiles: ToolFile[] = []
   const lines: string[] = []
+
   lines.push(`# ${s.title ?? s.sessionId}`)
   lines.push('')
   lines.push(`- session: ${s.sessionId}`)
@@ -155,29 +234,65 @@ export function renderTranscript(s: Session): string {
   if (s.endedAt) lines.push(`- ended: ${s.endedAt}`)
   if (s.model) lines.push(`- model: ${s.model}`)
   lines.push('')
+  lines.push(
+    '> Full tool inputs + results live in `tools/<seq>-<Name>.md`. Read those surgically when you need the verbatim code, file content, or command output behind a turn.'
+  )
+  lines.push('')
 
   for (const t of s.turns) {
     if (t.role === 'user') {
       lines.push('## User')
       lines.push(t.text.trim())
+      lines.push('')
     } else if (t.role === 'assistant') {
       lines.push('## Assistant')
       lines.push(t.text.trim())
+      lines.push('')
     } else if (t.role === 'tool_use') {
-      let preview: string
+      let inputJson: string
       try {
-        preview = JSON.stringify(t.input).slice(0, 200)
+        inputJson = JSON.stringify(t.input)
       } catch {
-        preview = '<unserializable>'
+        inputJson = '"<unserializable>"'
       }
-      lines.push(`> tool_use: \`${t.name}\` ${preview}`)
-    } else if (t.role === 'tool_result') {
-      const head = t.preview.split('\n').slice(0, 3).join(' / ').slice(0, 200)
-      lines.push(`> tool_result${t.isError ? ' (error)' : ''}: ${head}`)
+      const inputPreview = inputJson.length > 120 ? inputJson.slice(0, 117) + '…' : inputJson
+      const filename = toolFilename(t.seq, t.name)
+      const result = resultsByUseId.get(t.toolUseId)
+      const status = result ? (result.isError ? 'error' : 'ok') : 'no-result'
+      const outline = result ? ` — ${firstLine(result.content, 80)}` : ''
+      lines.push(`> tool [${String(t.seq).padStart(3, '0')}] \`${t.name}\` ${inputPreview} → ${status} @tools/${filename}${outline}`)
+      lines.push('')
+
+      const fileParts: string[] = []
+      fileParts.push(`# Tool ${String(t.seq).padStart(3, '0')} — ${t.name}`)
+      fileParts.push('')
+      fileParts.push(`- tool_use_id: ${t.toolUseId}`)
+      fileParts.push(`- status: ${status}`)
+      fileParts.push('')
+      fileParts.push('## Input')
+      fileParts.push('')
+      fileParts.push('```json')
+      try {
+        fileParts.push(JSON.stringify(t.input, null, 2))
+      } catch {
+        fileParts.push('"<unserializable>"')
+      }
+      fileParts.push('```')
+      fileParts.push('')
+      fileParts.push('## Result')
+      fileParts.push('')
+      if (result) {
+        fileParts.push(result.content || '<empty>')
+      } else {
+        fileParts.push('<no result captured in transcript>')
+      }
+      fileParts.push('')
+      toolFiles.push({ seq: t.seq, name: t.name, filename, content: fileParts.join('\n') })
     }
-    lines.push('')
+    // tool_result already folded into the matching tool_use line above
   }
-  return lines.join('\n')
+
+  return { skeleton: lines.join('\n'), toolFiles }
 }
 
 export function listProjects(): string[] {

@@ -1,113 +1,148 @@
 # Distillation rules — clawd-wiki
 
-These rules govern how a single Claude Code session transcript is distilled into a wiki note.
+One Claude Code session → one wiki note. The note is read by future AGENTS landing on a slug page, not by humans skimming a list.
 
-## Audience and goal
+## The spine: work → pitfall → concept
 
-Use `[[slug]]` wikilink syntax for every project, work unit, pitfall, and concept so the wiki-gen stage can build bi-directional backlinks.
+Every session that's worth distilling tells one story:
 
-Slug conventions:
+1. **What work was done?** A discrete piece of engineering with a goal and an outcome.
+2. **What pitfalls were hit?** Specific failing patterns — wrong code, wrong assumption, wrong tool use — that blocked or detoured the work.
+3. **What concepts resolved them?** Generic, reusable engineering patterns that future agents can recognize and apply.
 
-- `[[project:<kebab-name>]]` — e.g. `[[project:cilayer]]`
-- `[[work:<kebab-slug>]]` — e.g. `[[work:backend-frontend-contract]]`
-- `[[pitfall:<kebab-slug>]]` — e.g. `[[pitfall:polling-too-fast]]`
-- `[[concept:<kebab-slug>]]` — e.g. `[[concept:exponential-backoff]]`
+If you cannot identify at least one real pitfall AND at least one concept that resolved it, **SKIP**. See "When to skip" below — the default is skip, not distill. Sessions without this chain are bloat.
 
-The chain to expose is: **project → work unit → pitfall → concept**. Every distilled note with a pitfall should name the concept that resolved it; every concept should reference the pitfall(s) it addresses. This is what makes the wiki navigable.
+## Slug conventions
 
-## Redaction — what to KEEP and what to STRIP
+- `[[project:<kebab>]]` — codebase / repo name. Free-form.
+- `[[work:<kebab>]]` — what was tackled. Project-anchored is fine.
+- `[[pitfall:<kebab>]]` — a specific failing pattern.
+- `[[concept:<kebab>]]` — a GENERIC engineering pattern reusable across codebases. Never project-bound.
 
-KEEP (project navigation depends on these):
+A pitfall's "Resolved by" cites a `[[concept:*]]`. A concept's "Related:" cites other concepts or pitfalls. Never self-cite.
 
-- Project / repo / codebase names: `cilayer`, `cfilayer`, `clawd-wiki`, `IBD`, etc. The transcript surfaces these as `<PATH:project=NAME>` placeholders. Treat NAME as a real project name and reference it as `[[project:NAME]]` when relevant.
-- Library / framework / tool names: React Router, TanStack Query, Drizzle, Shiki, Spark, Kafka, etc.
-- Technique / concept terminology.
-- Project-specific code identifiers — function names, hook names, component names, type names, module aliases (`useArtifactJson`, `EnrichRun`, `@/lib/dag`, `enrichment-view.tsx`), relative module paths. They are valuable anchors for future agents working in the same project. They belong under `[[project:*]]` / `[[work:*]]` entries naturally. (`[[concept:*]]` definitions should still read as transferable knowledge, but mentioning the specific identifier the project uses is fine — wiki-gen separates project-page detail from concept-page generality later.)
+## Input: directory, not file
 
-STRIP — output must contain ZERO of these:
+```
+data/collected/<session-id>/
+├── transcript.md     conversation skeleton with tool-call pointers
+└── tools/            one file per tool call, FULL untruncated content
+    ├── 001-Read.md
+    └── ...
+```
 
-- Person names, usernames, email addresses, phone numbers.
-- Company / organisation names, hostnames, URLs to private resources.
-- Absolute filesystem paths. The transcript already replaced these with `<PATH>`, `<PATH:project=NAME>`, `<EMAIL>`, `<REDACTED>`, `<ENCODED_PATH>`, `<IP>`, `<PHONE>` placeholders.
-- Internal jargon that only makes sense at one company.
+Read `transcript.md` end-to-end first. Then surgically open ONLY the `tools/*.md` files whose code, content, or output you'll quote — the Edit that introduced the pattern, the Bash whose stderr shows the failure, the Edit that fixed it. Don't read all of them.
 
-Critical rules:
+## Redaction
 
-- Treat surviving identifiers as a failure. When in doubt, paraphrase or drop the sentence.
-- Never echo the context around a placeholder if doing so would re-identify the original. ("I edited `<PATH>` to add a plugin" → write "added a Vite plugin", not "edited a path to add a plugin".)
-- Never invent a value for a placeholder.
-- Project-name placeholders ARE the exception — `<PATH:project=cilayer>` means you may say "in cilayer" or `[[project:cilayer]]`.
+KEEP: project / repo names (surface as `<PATH:project=NAME>` → say "in NAME" or `[[project:NAME]]`), library / framework names, code identifiers (function / hook / component / type / module names).
 
-## Content rules
+STRIP — zero tolerance: person names, usernames, emails, phones, company / org names, private hostnames, absolute filesystem paths, internal jargon. Transcript already replaced these with `<PATH>`, `<EMAIL>`, `<REDACTED>`, `<IP>`, `<PHONE>` etc. — don't re-identify by context. Never invent a value for a placeholder. When in doubt, drop the sentence.
 
-- Extract TRANSFERABLE knowledge, not chronology. "Cursor pattern works well with TanStack Query when X" — not "the user did X then Y".
-- A fact only meaningful inside one specific codebase = drop it. Keep only what generalises.
-- No stubs. If a section would have fewer than two items, omit the section entirely.
-- Quote the user directly only when their exact phrasing carries information paraphrase would lose. Use blockquotes and `[...]` to drop identifiers.
-- Distill the session if ANY of {techniques, concepts, pitfalls} would have non-trivial entries — even if the other categories are empty. A session full of useful techniques but no clear pitfalls IS worth distilling; omit the empty sections.
-- SKIP only when the session is genuinely trivial: status check, one-off syntax question, a fix with no general lesson, pure tool-output inspection. When in doubt, distill. Write exactly one line as the file content and stop:
+Any surviving identifier = quarantine. Project-name placeholders are the lone exception.
 
-  ```
-  <!-- SKIP: no transferable knowledge -->
-  ```
+## Bullet depth
+
+- **Summary**: 3-6 sentences. State what was done, the pitfalls hit, the concepts applied, the outcome. Reference `[[work:*]]`, `[[pitfall:*]]`, `[[concept:*]]` inline.
+- **Work units**: 2-4 sentences each. What was tackled → pitfall hit → concept applied → outcome.
+- **Pitfalls**: 2-4 sentences each. Failing pattern in plain terms → `Resolved by [[concept:*]]` → when it surfaces. Quote a reproducible error or command if the session captured one.
+- **Concepts**: 3-5 sentences each. **Generic only.** Definition → when it applies → when it does NOT → 1-2 related slugs. A project may be cited as an example ("e.g. cilayer applied this in `useArtifactJson`"), but the concept must stand alone. If a candidate can't be restated without naming a project, demote it to a `[[work:*]]` or fold into a Technique snippet.
+- **Techniques**: 3-8 numbered items, each 3-6 sentences, each with a verbatim fenced code block from a `tools/*.md` you actually read. Cite the slug(s) the technique relates to.
+- **Decisions and tradeoffs**: 2-6 bullets. Choice → alternative considered → why this won. Cite the relevant concept or pitfall.
+
+Omit any section whose list would have fewer than two items. Empty > thin.
+
+## Calibration examples
+
+Not from real sessions — they show the SHAPE you're targeting. Match the depth and abstraction, not the topic.
+
+**Concept:**
+- **[[concept:idempotency-key]]** — A client-supplied unique token on a mutating request so the server can dedupe replays; the server stores `key → result` for a TTL and returns the stored result on retry. Applies whenever retries are possible (network, queue redelivery, client crash) on state-changing operations. Does NOT apply to read-only calls or when at-most-once delivery is already guaranteed by transport. Related: [[concept:exponential-backoff]].
+
+**Pitfall:**
+- **[[pitfall:n-plus-one-query]]** — Iterating N parent rows and issuing one child query per row instead of a batch. Hidden by ORM lazy-loaders; tests pass with small fixtures, p95 latency grows linearly in prod. Symptom: ORM logs show N+1 sequential `SELECT … WHERE parent_id = ?`. Resolved by [[concept:batch-load-via-in-clause]] or an eager join.
+
+**Work unit:**
+- **[[work:rate-limit-middleware-rollout]]** — Added per-API-key token-bucket limiting to public mutations. The in-memory store let scaled replicas exceed the global cap ([[pitfall:limit-store-not-shared-across-instances]]); moved to Redis `INCR` + `EXPIRE`. Applies [[concept:token-bucket-rate-limit]]; outcome is consistent 429s under load.
+
+Don't emit these. They're calibration only.
+
+## Supplementing with general knowledge
+
+You MAY add one sentence of background when the session uses a pattern but doesn't explain a prerequisite the reader needs (e.g. "Proxy traps execute on every property access"). Constraints: session facts are primary; never invent project-specific facts; when unsure if a fact came from the session or from training, drop it.
+
+## When to skip — default is skip
+
+Emit the SKIP marker and stop when ANY is true:
+
+- No pitfall is visible, OR no concept resolves one. (A session that's pure feature work without a stuck-then-resolved arc has no transferable lesson.)
+- The lesson is one-off syntax, tooling configuration, or a project-specific bug fix with no general principle.
+- The "concept" you'd write is just the project's own architecture restated.
+- You'd have to invent or stretch to fill the bullets.
+
+Distill ONLY when you can write at least one Pitfall with a real failing pattern AND at least one generic Concept that resolved it. When in doubt, skip.
+
+SKIP marker (entire file content):
+
+```
+<!-- SKIP: no transferable knowledge -->
+```
 
 ## Output format
-
-Write the file as Markdown with this exact frontmatter shape:
 
 ```
 ---
 title: <concept-oriented title, 3-8 words>
-source_session: <session id — filename without .md>
-project: <primary project slug, or null if none>
-projects_referenced: [list of other project slugs touched, kebab-case]
+source_session: <session id>
+project: <primary project slug, or null>
+projects_referenced: [other project slugs]
 work_units: [kebab-slugs]
 pitfalls: [kebab-slugs]
 concepts: [kebab-slugs]
 ---
 
 ## Summary
-<2-4 sentences, dense and factual. May reference [[project:*]], [[work:*]], [[pitfall:*]], [[concept:*]] inline.>
+<3-6 sentences, work → pitfall → concept → outcome, with inline slug refs.>
 
 ## Work units
-- **[[work:<slug>]]** — <1-2 sentences on what was tackled>. Encountered [[pitfall:<slug>]]; applied [[concept:<slug>]].
+- **[[work:<slug>]]** — <what tackled, pitfall hit, concept applied, outcome.>
 - ...
 
 ## Pitfalls
-- **[[pitfall:<slug>]]** — <what went wrong, generic phrasing>. Resolved by [[concept:<slug>]]. Context: <when this surfaces>.
+- **[[pitfall:<slug>]]** — <failing pattern, Resolved by [[concept:<slug>]], when it surfaces. Quote a reproducible error if captured.>
 - ...
 
 ## Concepts
-- **[[concept:<slug>]]** — <one-line definition or role>. Applies when <condition>. Related: [[concept:<other>]], [[concept:<other>]].
+- **[[concept:<slug>]]** — <generic definition, applies / does NOT apply, related slugs. Project code allowed only as example.>
 - ...
 
 ## Techniques
-1. <numbered transferable technique, 1-3 sentences. Reference [[concept:*]] inline. Include code only when essential — fenced with language.>
+1. **<short title>.** <3-6 sentences citing [[type:slug]] inline.>
+
+   ```<language>
+   <verbatim code from a tools/*.md you read>
+   ```
+
 2. ...
 
 ## Decisions and tradeoffs
-- <bullets describing non-obvious choices and *why*, abstracted from any specific project>
+- **<choice>.** <alternative considered, why this won, relevant [[concept:*]] or [[pitfall:*]].>
 - ...
 ```
 
-Section rules:
+Code blocks should be syntax-tagged. No preamble, no trailing remarks, no meta-commentary about the distillation.
 
-- The frontmatter slug lists (`work_units`, `pitfalls`, `concepts`) MUST exactly match the slugs used in the body's `[[type:slug]]` references. They are the index the wiki-gen scans.
-- Omit any section whose list would have fewer than two items. (Better: zero entries than thin ones.)
-- No preamble, no trailing remarks, no explanation of the distillation itself.
+## Pipeline auto-fixes vs. agent invariants
 
-## Pre-flight checklist — verify BEFORE calling Write
+The `verify` step auto-syncs frontmatter `work_units` / `pitfalls` / `concepts` lists with body refs, and parses both flow and block YAML — don't worry about exact matches.
 
-A `verify` gate runs after distillation and quarantines any file that fails these checks. Self-check first; a quarantined file blocks ingestion.
+You MUST keep these correct (not auto-fixable):
 
-1. **Every body `[[work:|pitfall:|concept:slug]]` reference has its slug declared in the matching frontmatter list.** If you write `[[concept:exponential-backoff]]` anywhere in the body, `exponential-backoff` must appear in the `concepts:` frontmatter list — and there should be a `[[concept:exponential-backoff]]` definition entry in the `## Concepts` section.
-2. **Every frontmatter-declared slug is referenced at least once in the body.** No dead declarations.
-3. **A slug uses ONE type prefix consistently.** If `foo-bar` is declared as a pitfall, never write `[[concept:foo-bar]]` (even in "Related:" lines). Pick the type at first use and stay there.
-4. **Cross-references inside one section's bullets use the OTHER section's type.** A pitfall's "Resolved by" points at a `[[concept:*]]`. A concept's "Related:" points at other `[[concept:*]]`s (or a `[[pitfall:*]]` when relevant), never at itself.
-5. **The `project:` type is free-form** — it does NOT appear in any frontmatter slug list and is exempt from these checks.
-
-Mentally walk through each `[[...]]` in your draft and confirm the slug appears in the right frontmatter list. Mismatches are the most common cause of quarantine.
+1. **One type prefix per slug** within the note. If something's `[[pitfall:foo]]` once, it stays a pitfall.
+2. **Cross-references point at the OTHER section's type.** Pitfall's "Resolved by" → concept. Concept's "Related:" → other concepts (or pitfalls). Never self.
+3. **Every body-cited `[[concept:*]]` / `[[work:*]]` / `[[pitfall:*]]` has its own defining bullet in its section.** Otherwise it renders as an orphan with no page behind it.
+4. **Code snippets come from `tools/*.md` files you actually read.** No fabrication. Prose-only is fine if nothing was worth quoting.
 
 ## When done
 
-Write the file with the Write tool. Report back exactly one line: either `ok` (file written) or `skip` (no transferable knowledge). Nothing else.
+Write the file with Write. Reply with exactly one line: `ok` or `skip`. Nothing else.
