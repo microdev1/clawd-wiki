@@ -1,0 +1,62 @@
+# HydraDB SDK
+
+## Docs
+
+- [Add Memory](https://docs.hydradb.com/api-reference/endpoint/add-memory.md): Ingest user memories – preferences, conversation history, or inline text.
+- [Boolean Recall](https://docs.hydradb.com/api-reference/endpoint/boolean-recall.md): Deterministic full-text search – exact term matching, no embeddings.
+- [Create Tenant](https://docs.hydradb.com/api-reference/endpoint/create-tenant.md): Create an isolated workspace for your data.
+- [Delete Knowledge](https://docs.hydradb.com/api-reference/endpoint/delete-knowledge.md): Permanently delete one or more knowledge sources by ID.
+- [Delete Memory](https://docs.hydradb.com/api-reference/endpoint/delete-memory.md): Permanently delete a single memory by its ID.
+- [Delete Tenant](https://docs.hydradb.com/api-reference/endpoint/delete-tenant.md): Permanently delete a tenant and all its data.
+- [Fetch Content](https://docs.hydradb.com/api-reference/endpoint/fetch-content.md): Retrieve the original content of an ingested source.
+- [Full Recall](https://docs.hydradb.com/api-reference/endpoint/full-recall.md): Hybrid semantic + graph + metadata recall over knowledge sources.
+- [Graph Relations By Source ID](https://docs.hydradb.com/api-reference/endpoint/graph-relations.md): Retrieve all entity relationships extracted from a single source.
+- [Check Infra Status](https://docs.hydradb.com/api-reference/endpoint/infra-status.md): Check whether a tenant's infrastructure is fully provisioned.
+- [Ingestion - Overview](https://docs.hydradb.com/api-reference/endpoint/ingestion-overview.md): Quick reference for ingestion endpoints, their lifecycle, and when to use which.
+- [List Data](https://docs.hydradb.com/api-reference/endpoint/list-data.md): Paginated listing of stored knowledge or memories with optional filters.
+- [List – Overview](https://docs.hydradb.com/api-reference/endpoint/list-overview.md): Browse stored knowledge and memories, and inspect their graph relationships.
+- [List Sub-Tenant IDs](https://docs.hydradb.com/api-reference/endpoint/list-sub-tenant-ids.md): List all sub-tenants that have indexed data under a tenant.
+- [Memories – Overview](https://docs.hydradb.com/api-reference/endpoint/memories-overview.md): Quick reference for all Memories endpoints, their lifecycle, and when to call each.
+- [Monitor Tenant](https://docs.hydradb.com/api-reference/endpoint/monitor-tenant.md): Get usage statistics for a tenant – object counts and vector dimensions.
+- [Recall – Overview](https://docs.hydradb.com/api-reference/endpoint/recall-overview.md): Quick reference for all Recall endpoints, their differences, and when to call each.
+- [Recall Preferences](https://docs.hydradb.com/api-reference/endpoint/recall-preferences.md): Hybrid recall over user memories – preferences, conversation history, inline notes.
+- [Tenants – Overview](https://docs.hydradb.com/api-reference/endpoint/tenants-overview.md): Quick reference for all Tenants endpoints, their lifecycle, and when to call each.
+- [Upload Knowledge](https://docs.hydradb.com/api-reference/endpoint/upload-knowledge.md): Ingest documents (files) and/or app-generated content (app knowledge) into a tenant.
+- [Verify Processing](https://docs.hydradb.com/api-reference/endpoint/verify-processing.md): Check the processing status of ingested content.
+- [Error Responses](https://docs.hydradb.com/api-reference/error-responses.md): HTTP error codes, response shapes, and handling patterns across all HydraDB endpoints.
+- [API Reference](https://docs.hydradb.com/api-reference/index.md): Complete reference for every HydraDB endpoint, organized by group.
+- [SDKs – Node and Python](https://docs.hydradb.com/api-reference/sdks.md): Official TypeScript/Node.js and Python SDKs for the HydraDB platform.
+- [AI Chief of Staff](https://docs.hydradb.com/cookbooks/ai-chief-of-staff.md): “Quick-start guide to building an AI Chief of Staff with HydraDB using the TypeScript SDK. Register workspace functions as knowledge objects and let any agent ask 'What should I do?' to receive a structured, personalized execution plan. For the full production guide with Python, multi-step planning,…
+- [AI LinkedIn: People search in Natural Language](https://docs.hydradb.com/cookbooks/ai-linkedin-recruiter.md): Learn how to build an intelligent recruiting platform that understands natural language queries like 'find me someone who has 5+ years of experience in machine learning and has worked at Apple before' using HydraDB's AI search capabilities.
+- [AI Onboarding Agent](https://docs.hydradb.com/cookbooks/ai-onboarding-agent.md): Go from zero to a working onboarding agent in three phases. Upload decision logs, org charts, meeting notes, and product specs into HydraDB. New hires ask 'why did we choose Postgres?' or 'who owns the payments service?' and get answers from real company context - not generic LLM guesses. Every API…
+- [AI Travel Planner](https://docs.hydradb.com/cookbooks/ai-travel-planner.md): Learn how to build an intelligent travel planning platform that understands natural language queries and provides personalized recommendations using HydraDB's AI search and memory capabilities.
+- [AI Competitive Intelligence Agent](https://docs.hydradb.com/cookbooks/competitive-intelligence-agent.md): Continuously ingest competitor press releases, job postings, customer reviews, and earnings transcripts into HydraDB. Answer 'What is Competitor X doing right now?' and 'How has their messaging shifted over the last 6 months?' with full temporal context. Every API call in this guide is real and veri…
+- [Cursor for Docs](https://docs.hydradb.com/cookbooks/cookbook-01-build-cursor-for-docs.md): Go from zero to a production AI assistant that answers 'why was this built this way?' - in four phases. Start with one file and a real recall query. End with a FastAPI backend that ingests GitHub, PRs, Slack, and RFCs, then generates GPT-4o answers grounded in your codebase. Every endpoint in this g…
+- [Internal IT Support Agent](https://docs.hydradb.com/cookbooks/cookbook-04-build-notion-ai.md): Ingest your entire workspace - Notion, Confluence, Slack - into HydraDB and build a conversational interface that understands relationships between documents. Answer 'why did we decide X?' using HydraDB's context graph. Every endpoint in this guide is real and copy-paste ready.
+- [AI Financial Analyst with Memory](https://docs.hydradb.com/cookbooks/cookbook-10-ai-financial-analyst.md): Upload earnings PDFs, internal metrics, and board memos into HydraDB. Ask trend questions across quarters, get temporally-aware answers, and surface the exact clause, figure, or narrative shift - not a generic summary.
+- [AI Customer Support Agent with Memory](https://docs.hydradb.com/cookbooks/customer-support-agent.md): A support agent that never forgets. Ingest help docs, past ticket resolutions, and every conversation turn into HydraDB. Every response is personalized using per-user memory - the agent knows the customer's plan, their past issues, their preferences, and what already failed before it starts typing.
+- [Build your own Glean with HydraDB](https://docs.hydradb.com/cookbooks/glean-clone.md): Learn how to build a comprehensive workplace search and AI assistant platform using HydraDB APIs. This guide covers data ingestion, retrieval, and app-layer answer generation across multiple data sources.
+- [AI Chief of Staff - Function Routing](https://docs.hydradb.com/cookbooks/hydradb-cookbook-06.md): Build an AI Chief of Staff that takes real actions across your workspace using HydraDB function routing. Register every callable function as a knowledge object in HydraDB. Any agent or user can say 'prepare for tomorrow's board meeting' and receive a structured execution plan.
+- [Introduction](https://docs.hydradb.com/cookbooks/index.md): Production-ready guides for building AI agents with HydraDB.
+- [Perplexity for Internal Knowledge](https://docs.hydradb.com/cookbooks/internal-search-perplexity.md): Ingest Slack, Gmail, Confluence, GitHub, and Linear into one HydraDB tenant. Ask any question in natural language and get a cited, synthesized answer drawing from across all your company's knowledge - including 'what led to the decision to sunset Project X?' with full decision provenance.
+- [How to Use API Results](https://docs.hydradb.com/essentials/api-results.md): Turn a recall response into a grounded LLM answer.
+- [Architecture](https://docs.hydradb.com/essentials/architecture.md): How HydraDB moves content from ingestion to indexed recall, and where tenants, metadata, graph context, and retrieval fit together.
+- [Context Graphs](https://docs.hydradb.com/essentials/context-graphs.md): How HydraDB models relationships between chunks using triplets to improve recall quality.
+- [Knowledge](https://docs.hydradb.com/essentials/knowledge.md): What Knowledge is, how it differs from Memories, and how to ingest it correctly.
+- [Memories](https://docs.hydradb.com/essentials/memories.md): What Memories are, how they differ from Knowledge, and how to write them correctly.
+- [Metadata](https://docs.hydradb.com/essentials/metadata.md): How HydraDB uses metadata fields to filter recall results deterministically.
+- [Multi-Tenant Support](https://docs.hydradb.com/essentials/multi-tenant.md): How HydraDB scopes data using tenants and sub-tenants, and how scoping affects writes and recall.
+- [Recall](https://docs.hydradb.com/essentials/recall.md): How HydraDB retrieves the right context for each query - across Knowledge, Memories, and the context graph.
+- [Semantic Search & Retrieval](https://docs.hydradb.com/essentials/semantic-search.md): How semantic, lexical, graph, and metadata signals work together in HydraDB recall.
+- [Webhooks](https://docs.hydradb.com/essentials/webhooks.md): Receive indexing status events when ingested content finishes processing.
+- [Core Concepts](https://docs.hydradb.com/get-started/core-concepts.md): A tour of the five primitives that make HydraDB work.
+- [Introduction](https://docs.hydradb.com/get-started/introduction.md): Graph-first, unified state infrastructure for AI. One API for memory, knowledge, and everything in between.
+- [Quickstart](https://docs.hydradb.com/get-started/quickstart.md): Build your first working recall in five minutes.
+- [Claude Code](https://docs.hydradb.com/plugins/claude-code.md): HydraDB plugin for Claude Code. Persistent memory and contextual awareness across sessions and projects.
+- [HydraDB CLI](https://docs.hydradb.com/plugins/cli.md): Agent-friendly command line interface for HydraDB. Manage memories, recall context, and ingest knowledge from the terminal.
+- [HydraDB MCP](https://docs.hydradb.com/plugins/mcp.md): MCP (Model Context Protocol) server for [HydraDB](https://hydradb.com). Provides tools for storing, recalling, and managing memories with knowledge-graph enriched context.
+- [Open Claw](https://docs.hydradb.com/plugins/openclaw.md): HydraDB plugin for OpenClaw. Automatically captures conversations, recalls relevant context with knowledge-graph connections, and injects them before every AI turn.
+
+## OpenAPI Specs
+
+- [openapi](https://docs.hydradb.com/api-reference/openapi.json)

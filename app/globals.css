@@ -1,0 +1,386 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-background: #fff;
+  --color-foreground: #202122;
+  --color-muted: #54595d;
+  --color-link: #0645ad;
+  --color-link-visited: #0b0080;
+  --color-link-hover: #06c;
+  --color-link-red: #ba0000;
+  --color-rule: #a2a9b1;
+  --color-rule-soft: #c8ccd1;
+  --color-wash: #f8f9fa;
+  --color-wash-strong: #eaecf0;
+
+  --font-serif: 'Linux Libertine', Georgia, 'Times New Roman', Times, serif;
+  --font-sans: sans-serif;
+  --font-mono: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', monospace;
+
+  --radius-sm: 2px;
+  --radius-md: 3px;
+
+  --sidebar-width: 176px;
+  --header-height: 56px;
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a {
+    color: var(--color-link);
+    text-decoration: none;
+  }
+
+  a:visited {
+    color: var(--color-link-visited);
+  }
+
+  a:hover {
+    text-decoration: underline;
+    color: var(--color-link-hover);
+  }
+
+  h1,
+  h2 {
+    font-family: var(--font-serif);
+    font-weight: normal;
+    line-height: 1.3;
+    margin-block: 0.5em 0.25em;
+    padding-block-end: 0.25em;
+    border-block-end: 1px solid var(--color-rule);
+  }
+
+  h1 {
+    font-size: 1.85rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-sans);
+    font-weight: bold;
+    line-height: 1.3;
+    margin-block: 1em 0.25em;
+  }
+
+  h3 {
+    font-size: 1.15rem;
+  }
+
+  h4 {
+    font-size: 1rem;
+  }
+
+  p {
+    margin-block: 0.5em 0.75em;
+  }
+
+  ul,
+  ol {
+    margin-block: 0.3em 0.6em;
+    padding-inline-start: 1.6em;
+  }
+
+  ul {
+    list-style: square;
+  }
+
+  li {
+    margin-block: 0.1em;
+  }
+
+  hr {
+    border: 0;
+    border-block-start: 1px solid var(--color-rule);
+    margin-block: 1em;
+  }
+
+  blockquote {
+    margin-inline-start: 0;
+    padding-inline-start: 1em;
+    border-inline-start: 3px solid var(--color-rule-soft);
+    color: var(--color-muted);
+  }
+
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    padding: 1px 4px;
+    background: var(--color-wash);
+    border: 1px solid var(--color-wash-strong);
+    border-radius: var(--radius-sm);
+    color: #000;
+  }
+
+  pre {
+    overflow-x: auto;
+    padding: 12px 16px;
+    border-radius: var(--radius-md);
+    margin-block: 1em;
+    background: var(--color-wash);
+    border: 1px solid var(--color-wash-strong);
+  }
+
+  pre code {
+    background: transparent;
+    border: 0;
+    padding: 0;
+  }
+
+  img,
+  picture {
+    max-width: 100%;
+    display: block;
+  }
+
+  table {
+    border-collapse: collapse;
+    margin-block: 1em;
+  }
+
+  th,
+  td {
+    border: 1px solid var(--color-rule);
+    padding: 4px 8px;
+  }
+
+  th {
+    background: var(--color-wash-strong);
+    text-align: start;
+  }
+
+  :target {
+    scroll-margin-block-start: 80px;
+  }
+}
+
+/* Top site header (logo bar) */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--color-background);
+  border-block-end: 1px solid var(--color-rule);
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  padding-inline: 16px;
+  gap: 16px;
+}
+
+.site-header .brand {
+  font-family: var(--font-serif);
+  font-size: 1.4rem;
+  color: var(--color-foreground);
+  text-decoration: none;
+}
+
+.site-header .brand:hover {
+  text-decoration: none;
+  color: var(--color-foreground);
+}
+
+.site-header .brand .tagline {
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  color: var(--color-muted);
+  margin-inline-start: 6px;
+}
+
+.site-header nav {
+  margin-inline-start: auto;
+  display: flex;
+  gap: 12px;
+  font-size: 0.85rem;
+}
+
+/* Layout shell with sidebar */
+.shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) 1fr;
+  align-items: start;
+  min-height: calc(100vh - var(--header-height));
+}
+
+.sidebar {
+  position: sticky;
+  top: var(--header-height);
+  padding: 12px 8px 24px;
+  border-inline-end: 1px solid var(--color-rule);
+  background: var(--color-background);
+  font-size: 0.8rem;
+  height: calc(100vh - var(--header-height));
+  overflow-y: auto;
+}
+
+.sidebar h4 {
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: normal;
+  color: var(--color-muted);
+  text-transform: none;
+  margin: 12px 0 4px;
+  padding: 0 8px;
+  border-block-end: 1px solid var(--color-rule-soft);
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar li {
+  margin: 0;
+}
+
+.sidebar li a {
+  display: block;
+  padding: 3px 8px;
+  line-height: 1.3;
+}
+
+.main-pane {
+  background: var(--color-background);
+  min-width: 0;
+}
+
+.article {
+  padding: 16px 28px 48px;
+  max-width: 960px;
+}
+
+.article-title {
+  font-family: var(--font-serif);
+  font-size: 1.85rem;
+  font-weight: normal;
+  line-height: 1.2;
+  margin: 0 0 0.1em;
+  padding-block-end: 0.2em;
+  border-block-end: 1px solid var(--color-rule);
+}
+
+.article-subtitle {
+  font-style: italic;
+  color: var(--color-muted);
+  font-size: 0.85rem;
+  margin: 0 0 1em;
+}
+
+/* Stop nested h1 from MDX from re-rendering its own title; first h1 inside .article-body is hidden because we render the title separately */
+.article-body > h1:first-child {
+  display: none;
+}
+
+/* The first paragraph (often the italic "*concept*" line) acts like an infobox-style kicker */
+.article-body em:only-child {
+  color: var(--color-muted);
+}
+
+.category-bar {
+  margin-block-start: 2em;
+  padding: 6px 10px;
+  border: 1px solid var(--color-rule);
+  background: var(--color-wash);
+  font-size: 0.85rem;
+}
+
+.category-bar strong {
+  font-weight: normal;
+  color: var(--color-muted);
+  margin-inline-end: 6px;
+}
+
+/* Wiki main-page panels */
+.panel {
+  border: 1px solid var(--color-rule);
+  background: var(--color-wash);
+  padding: 12px 16px;
+  margin-block-end: 16px;
+}
+
+.panel > h2 {
+  font-size: 1.15rem;
+  margin: 0 0 0.4em;
+  padding-block-end: 0.2em;
+  border-block-end: 1px solid var(--color-rule-soft);
+}
+
+.panel ul {
+  margin: 0;
+  padding-inline-start: 1.2em;
+}
+
+.toc {
+  display: inline-block;
+  border: 1px solid var(--color-rule);
+  background: var(--color-wash);
+  padding: 8px 14px 10px;
+  margin-block: 8px 16px;
+  font-size: 0.85rem;
+  min-width: 240px;
+}
+
+.toc-title {
+  font-family: var(--font-sans);
+  font-weight: bold;
+  text-align: center;
+  font-size: 0.85rem;
+  margin: 0 0 4px;
+}
+
+.toc ol {
+  list-style: none;
+  padding-inline-start: 0;
+  margin: 0;
+}
+
+.toc li {
+  margin: 1px 0;
+}
+
+@media (max-width: 720px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+    height: auto;
+    border-inline-end: 0;
+    border-block-end: 1px solid var(--color-rule);
+  }
+
+  .article {
+    padding: 16px;
+  }
+}
+
+html.dark .shiki,
+html.dark .shiki span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+}

@@ -1,0 +1,12 @@
+{
+  "_description": "Pipeline config. denylist is hard-stripped (case-insensitive, whole word). projectPathRoots is a list of path prefixes (relative to /Users/<user>/) under which the next path segment is a project name worth preserving; the path becomes <PATH:project=NAME> instead of <PATH>. excludeProjects names ~/.claude/projects/ directories to skip entirely (e.g. to prevent the wiki citing its own meta-conversations).",
+  "denylist": ["macroni", "fincepta"],
+  "projectPathRoots": [
+    "Developer/projects",
+    "Developer/work/fincepta",
+    "Developer/terms/25T2"
+  ],
+  "excludeProjects": [
+    "-Users-macroni-Developer-projects-clawd-wiki"
+  ]
+}
