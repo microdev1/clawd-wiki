@@ -8,7 +8,8 @@ type Input = {
 }
 
 export function pageMeta({ title, description, location }: Input) {
-  const url = `${siteUrl}${location.pathname}`
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+  const url = `${siteUrl}${base}${location.pathname}`
   return [
     { title },
     { name: 'description', content: description },

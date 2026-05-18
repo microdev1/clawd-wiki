@@ -11,6 +11,7 @@ import remarkMdxFrontmatter from 'remark-mdx-frontmatter'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
+  base: '/clawd-wiki/',
   plugins: [
     tailwindcss(),
     mdx({

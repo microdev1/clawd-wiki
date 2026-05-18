@@ -4,7 +4,7 @@ import { SiteShell } from '@/components/site-shell'
 import type { Route } from './+types/root'
 import './globals.css'
 
-export const links: Route.LinksFunction = () => [{ rel: 'icon', href: '/favicon.ico' }]
+export const links: Route.LinksFunction = () => [{ rel: 'icon', href: `${import.meta.env.BASE_URL}favicon.ico` }]
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
