@@ -11,7 +11,7 @@
     "generate": "bun scripts/generate.ts",
     "wiki": "bun scripts/wiki.ts",
     "dev": "react-router dev",
-    "build": "bun run generate && react-router build",
+    "build": "react-router build",
     "start": "cd build/client && python3 -m http.server --bind localhost",
     "type": "react-router typegen && tsc --noEmit"
   },
